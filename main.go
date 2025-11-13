@@ -2,11 +2,21 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"io"
+	"os"
 	"os/exec"
 
 	"github.com/charmbracelet/log"
 )
+
+// TODO: Need other
+
+type SystemLog struct {
+	_PID              string `json:"_PID"`
+	MESSAGE           string `json:"MESSAGE"`
+	SYSLOG_IDENTIFIER string `json:"SYSLOG_IDENTIFIER"`
+}
 
 func main() {
 	cmd := exec.Command("journalctl", "-f", "-o", "json")
@@ -27,14 +37,28 @@ func main() {
 
 	for {
 		line, err := reader.ReadString('\n')
-		// TODO: Parse certain logs out
 		if err != nil {
 			if err == io.EOF {
 				log.Info("end of stream...")
+				os.Exit(0)
 			} else {
 				log.Error("error reading from journalctl:", err)
 			}
 		}
-		log.Print(line)
+
+		jsonData := []byte(line)
+
+		var sysLog SystemLog
+		er := json.Unmarshal(jsonData, &sysLog)
+
+		if er != nil {
+			log.Error("error parsing JSON:", er)
+		}
+
+		// TODO: Parse certain logs out
+		if len(sysLog.MESSAGE) > 0 {
+			msg := sysLog.SYSLOG_IDENTIFIER + " " + sysLog.MESSAGE
+			log.Info(msg)
+		}
 	}
 }
