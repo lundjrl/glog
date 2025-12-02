@@ -6,16 +6,22 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"regexp"
 
 	"github.com/charmbracelet/log"
 )
-
-// TODO: Need other
 
 type SystemLog struct {
 	_PID              string `json:"_PID"`
 	MESSAGE           string `json:"MESSAGE"`
 	SYSLOG_IDENTIFIER string `json:"SYSLOG_IDENTIFIER"`
+}
+
+func parseMessage(sysMessage string) string {
+	regDate := regexp.MustCompile(`\[\d{2}/\d{2}/\d{2}, \d{2}:\d{2}:\d{2}:\d{3}\] info: `)
+	textWithoutDate := regDate.ReplaceAllString(sysMessage, "")
+
+	return textWithoutDate
 }
 
 func main() {
@@ -30,7 +36,6 @@ func main() {
 		log.Error("Error starting journalctl: %v", err)
 	}
 
-	// reader buffer
 	reader := bufio.NewReader(stdout)
 
 	log.Info("streaming logs...")
@@ -55,9 +60,8 @@ func main() {
 			log.Error("error parsing JSON:", er)
 		}
 
-		// TODO: Parse certain logs out
 		if len(sysLog.MESSAGE) > 0 {
-			msg := sysLog.SYSLOG_IDENTIFIER + " " + sysLog.MESSAGE
+			msg := sysLog.SYSLOG_IDENTIFIER + " :: " + parseMessage(sysLog.MESSAGE)
 			log.Info(msg)
 		}
 	}
