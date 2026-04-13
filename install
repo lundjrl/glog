@@ -1,0 +1,18 @@
+#!/bin/bash
+
+has_go=$(which go)
+
+# Install the binary to your PATH
+go build
+
+install_path=$(go list -f '{{.Target}}')
+program_name="/glog"
+str=${install_path%"$program_name"}
+
+export PATH=$PATH:"${str}"
+
+go env -w GOBIN="${str}"
+
+go install
+
+echo "enjoy :) \n try typing 'glog'"
